@@ -1,11 +1,21 @@
 # RSS to Email (Papers) / RSS 邮件推送
 
-English follows by section; 中文在后半部分。
+EN: For researchers, students, and avid learners, staying on top of the latest publications can feel like a full-time job. This tool automates that process. Simply configure the RSS feeds from your favorite journals or topics, and let it send a curated list of new papers to your inbox daily. Reclaim your time for deep work instead of endless browsing.
+
+ZH: 科研人员、学生和知识爱好者常被追踪最新论文的负担所困扰。本工具旨在将此过程自动化：您只需配置关注期刊或主题的RSS源，即可每天在邮箱中收到一份精心整理的最新论文列表。将您的时间从繁琐的信息检索中解放出来，更专注于深度思考。
+
 
 ---
 ## Environment Requirements (EN)
 - Python 3.10-3.12 (greater than 3.12 may have SQLAlchemy compatibility issues).
 - Dependencies listed in `requirements.txt`.
+
+## Who It’s For & What You Get (EN)
+- Research groups / labs tracking journals and conferences: fetch multiple RSS sources, deduplicate, store in SQLite, and deliver grouped digest emails (HTML + text) per topic.
+- Teams with separate recipient lists: per-group to/cc/bcc via `GROUP_RECIPIENTS_FILE`, with batch limits to avoid inbox flooding.
+- Busy schedulers: daily automation via APScheduler; falls back to one-off runs if scheduling is off.
+- Security-conscious users: secrets and recipient files stay out of git (`.env`, `group_recipients.json`), with safe templates for sharing.
+- Lightweight deployers: SQLite + stdlib email works on Windows/macOS/Linux with minimal setup (copy `.env.example`, add `rss_groups.json` + recipients, run).
 
 ## Quick Start (EN)
 1) Create venv & install
@@ -74,6 +84,13 @@ python -m src.test_email
 ## 环境要求 (ZH)
 - Python 3.10-3.12, 大于3.12可能存在SQLAlchemy兼容性问题。
 - 依赖见 `requirements.txt`。
+
+## 适用人群与价值 (ZH)
+- 研究/实验室团队或个人：按主题分组抓取多路 RSS，指纹去重后存入 SQLite，并按分组发送 HTML + 文本摘要邮件。
+- 多收件人场景：`GROUP_RECIPIENTS_FILE` 为各分组配置 to/cc/bcc，批次上限可控，避免邮箱轰炸。
+- 需要定时的用户：APScheduler 支持每日自动运行，关闭定时则回退单次执行。
+- 注重安全的团队：凭据与收件人文件不入库（`.env`、`group_recipients.json` 已忽略），提供示例模板便于安全分享。
+- 追求轻量部署：SQLite + 标准库邮件，跨平台快速落地；复制 `.env.example`，准备 `rss_groups.json` 与收件人文件即可运行。
 
 ## 快速开始 (ZH)
 1）创建虚拟环境并安装依赖
