@@ -1,0 +1,133 @@
+# RSS to Email (Papers) / RSS 邮件推送
+
+English follows by section; 中文在后半部分。
+
+---
+## Environment Requirements (EN)
+- Python 3.10-3.12 (greater than 3.12 may have SQLAlchemy compatibility issues).
+- Dependencies listed in `requirements.txt`.
+
+## Quick Start (EN)
+1) Create venv & install
+```bash
+python -m venv .venv
+.venv/Scripts/activate  # Windows
+pip install -r requirements.txt
+```
+2) Copy env template
+```bash
+cp .env.example .env
+```
+3) Prepare `rss_groups.json` (required)
+```json
+{
+  "Elsevier": ["https://example.com/rss1"],
+  "Springer": ["https://example.com/rss2"]
+}
+```
+Optional per-group recipients (`group_recipients.json`):
+```json
+{
+  "Elsevier": {"to": ["elsevier_to@example.com"], "cc": ["elsevier_cc@example.com"], "bcc": []},
+  "Springer": {"to": ["springer_to@example.com"], "cc": [], "bcc": ["springer_bcc@example.com"]}
+}
+```
+4) Run once (fetch + send)
+```bash
+python -m src.main
+```
+5) Send test email (uses first available group recipients)
+```bash
+python -m src.test_email
+```
+6) Optional daily schedule at 08:30
+- Set `ENABLE_SCHEDULE=true`, `SCHEDULE_TIME=08:30`, `SCHEDULE_TZ=Asia/Shanghai`
+- Then run `python -m src.main` to start the scheduler.
+7) Per-group emails
+- Sources come only from `rss_groups.json` (`RSS_GROUPS_FILE` can change the path).
+- Each group gets its own email; if no new papers, a "no new papers" notice is sent.
+
+## Configuration (EN)
+- `RSS_GROUPS_FILE`: required; JSON file mapping group -> list of RSS URLs (default `rss_groups.json`).
+- `GROUP_RECIPIENTS_FILE`: required for sending; JSON mapping group -> {to, cc, bcc}. If a group has empty lists, sending will fail for that group.
+- `DATABASE_URL`: SQLAlchemy URL (default `sqlite:///data/rss.db`).
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`: SMTP credentials.
+- `SMTP_SENDER`: From address.
+- (Recipients) Use `GROUP_RECIPIENTS_FILE` only; define `to/cc/bcc` per group.
+- `MAIL_SUBJECT_PREFIX`: optional subject prefix.
+- `BATCH_LIMIT`: max unsent items per email (default 20; empty means no limit).
+- `ENABLE_SCHEDULE`: `true/false` to enable APScheduler.
+- `SCHEDULE_TIME`: `HH:MM` (default `08:30`).
+- `SCHEDULE_TZ`: timezone (default `Asia/Shanghai`).
+
+## Notes (EN)
+- Items are deduped by fingerprint of entry ID/link + published time.
+- SQLite DB lives under `data/` by default; folder auto-created.
+- Scheduler can be internal (APScheduler) or external (cron/Task Scheduler).
+
+### Security & Privacy (EN)
+- Do not commit real secrets or recipient lists. `.gitignore` ignores `.env` and `group_recipients.json`.
+- Keep `GROUP_RECIPIENTS_FILE` outside the repo if needed (e.g., `C:\Users\you\secrets\group_recipients.json`).
+- Use `.env.example` as a template; copy to `.env` and fill values locally.
+
+---
+## 环境要求 (ZH)
+- Python 3.10-3.12, 大于3.12可能存在SQLAlchemy兼容性问题。
+- 依赖见 `requirements.txt`。
+
+## 快速开始 (ZH)
+1）创建虚拟环境并安装依赖
+```bash
+python -m venv .venv
+.venv/Scripts/activate
+pip install -r requirements.txt
+```
+2）复制环境模板
+```bash
+cp .env.example .env
+```
+3）准备必需的 `rss_groups.json`，示例：
+```json
+{
+  "Elsevier": ["https://example.com/rss1"],
+  "Springer": ["https://example.com/rss2"]
+}
+```
+4）单次运行（抓取 + 发送）
+```bash
+python -m src.main
+```
+5）测试邮件发送（使用分组收件人文件中的第一个分组）
+```bash
+python -m src.test_email
+```
+6）可选：每天 08:30 定时
+- 设置 `ENABLE_SCHEDULE=true`、`SCHEDULE_TIME=08:30`、`SCHEDULE_TZ=Asia/Shanghai`
+- 运行 `python -m src.main` 启动调度。
+7）按分组发送
+- 仅从 `rss_groups.json` 读取源（可用 `RSS_GROUPS_FILE` 指定路径）。
+- 可选 `group_recipients.json` 为分组设置不同收件人，结构：`{"Group": {"to": [..], "cc": [..], "bcc": [..]}}`（可用 `GROUP_RECIPIENTS_FILE` 指定路径）。
+- 每个分组单独邮件；若无新论文，会发送“无新论文”提醒。
+
+## 配置项 (ZH)
+- `RSS_GROUPS_FILE`：必填，JSON 文件，键为分组名、值为 RSS 列表（默认 `rss_groups.json`）。
+- `DATABASE_URL`：数据库连接，默认 SQLite `sqlite:///data/rss.db`。
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`：SMTP 凭据。
+- `SMTP_SENDER`：发件人地址。
+- （收件人）仅通过 `GROUP_RECIPIENTS_FILE` 配置各分组的 `to/cc/bcc`；若某分组为空将导致该分组无法发送。
+- `MAIL_SUBJECT_PREFIX`：主题前缀。
+- `BATCH_LIMIT`：单次发送的未发送论文上限（默认 20，留空表示不限制）。
+- `ENABLE_SCHEDULE`：是否启用 APScheduler。
+- `SCHEDULE_TIME`：发送时间，格式 `HH:MM`，默认 `08:30`。
+- `SCHEDULE_TZ`：时区，默认 `Asia/Shanghai`。
+ - `GROUP_RECIPIENTS_FILE`：必填（发送所需），按分组指定 `to/cc/bcc`；若该分组为空则该分组无法发送。
+
+## 说明 (ZH)
+- 通过条目 ID/链接与发布时间指纹去重。
+- 默认 SQLite 数据库位于 `data/`，目录自动创建。
+- 可使用内置 APScheduler 或外部计划任务（cron/任务计划程序）。
+
+### 安全与隐私 (ZH)
+- 请勿提交真实的凭据与收件人列表。仓库已通过 `.gitignore` 忽略 `.env` 与 `group_recipients.json`。
+- 如需更安全，可将 `GROUP_RECIPIENTS_FILE` 放在仓库外部路径（如 `C:\Users\you\secrets\group_recipients.json`）。
+- 使用 `.env.example` 作为模板，在本地复制为 `.env` 并填写实际值。

@@ -1,0 +1,5 @@
+feedparser==6.0.10
+SQLAlchemy==2.0.25
+python-dotenv==1.0.1
+APScheduler==3.10.4
+tzdata==2024.1

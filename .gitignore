@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+.venv/
+
+# Environment
+.env
+
+# Local config & recipients (keep private)
+group_recipients.json
+
+# Databases & data
+data/
+*.sqlite*
+
+# VS Code
+.vscode/
+
+# OS junk
+.DS_Store
+Thumbs.db
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+.env
+.data/
+data/
+.DS_Store
