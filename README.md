@@ -69,6 +69,8 @@ python -m src.test_email
 - `ENABLE_SCHEDULE`: `true/false` to enable APScheduler.
 - `SCHEDULE_TIME`: `HH:MM` (default `08:30`).
 - `SCHEDULE_TZ`: timezone (default `Asia/Shanghai`).
+- `FETCH_INTERVAL_MINUTES`: interval (minutes) to fetch RSS when scheduling is enabled (default 1440 = 24h).
+- `SEND_INTERVAL_MINUTES`: interval (minutes) to send queued papers when scheduling is enabled (default 1440 = 24h).
 
 ## Notes (EN)
 - Items are deduped by fingerprint of entry ID/link + published time.
@@ -137,6 +139,8 @@ python -m src.test_email
 - `ENABLE_SCHEDULE`：是否启用 APScheduler。
 - `SCHEDULE_TIME`：发送时间，格式 `HH:MM`，默认 `08:30`。
 - `SCHEDULE_TZ`：时区，默认 `Asia/Shanghai`。
+- `FETCH_INTERVAL_MINUTES`：启用调度时，抓取 RSS 的分钟间隔（默认 1440，即 24 小时）。
+- `SEND_INTERVAL_MINUTES`：启用调度时，发送邮件的分钟间隔（默认 1440，即 24 小时）。
  - `GROUP_RECIPIENTS_FILE`：必填（发送所需），按分组指定 `to/cc/bcc`；若该分组为空则该分组无法发送。
 
 ## 说明 (ZH)
@@ -148,3 +152,58 @@ python -m src.test_email
 - 请勿提交真实的凭据与收件人列表。仓库已通过 `.gitignore` 忽略 `.env` 与 `group_recipients.json`。
 - 如需更安全，可将 `GROUP_RECIPIENTS_FILE` 放在仓库外部路径（如 `C:\Users\you\secrets\group_recipients.json`）。
 - 使用 `.env.example` 作为模板，在本地复制为 `.env` 并填写实际值。
+## 故障排查 (Troubleshooting)
+
+### APScheduler Misfire 错误
+如果遇到类似以下错误：
+```
+Run time of job "main.<locals>.job_full_cycle" was missed by 0:00:01.233123
+```
+
+**原因：** 任务执行时间过长，超过了下一次调度时间。
+
+**解决方案：**
+1. **已修复：** 代码已更新，增加了 `misfire_grace_time` 到3600秒（1小时）
+2. **运行诊断工具：**
+   ```bash
+   python src/test_scheduler.py
+   ```
+   这将测试所有配置并报告潜在问题
+
+3. **查看详细日志：**
+   修复后的代码会输出执行时间：
+   ```
+   [2025-12-31 08:30:00] Starting scheduled job...
+   [2025-12-31 08:30:45] Completed in 45.32s: Ingested 15 new items...
+   ```
+
+4. **优化建议：**
+   - 如果执行时间超过5分钟，考虑调整到凌晨执行（`SCHEDULE_TIME=03:00`）
+   - 检查慢速RSS源（诊断工具会标识出来）
+   - 查看 [SCHEDULER_FIX.md](SCHEDULER_FIX.md) 了解详细修复说明
+   - 查看 [CONFIG_RECOMMENDATIONS.md](CONFIG_RECOMMENDATIONS.md) 了解最佳实践
+
+### 其他常见问题
+
+**Q: RSS源获取失败**
+```bash
+# 测试单个RSS源
+python -c "from src.rss_email.rss_client import fetch_feed; print(fetch_feed('YOUR_URL'))"
+```
+
+**Q: 数据库连接错误**
+- 确保 `data/` 目录存在且可写
+- SQLite文件路径正确（默认：`data/rss.db`）
+
+**Q: 邮件发送失败**
+- 验证SMTP配置（主机、端口、用户名、密码）
+- 检查是否需要应用专用密码（如Gmail）
+- 运行测试脚本：`python src/test_email.py`
+
+**Q: 时区问题**
+- Windows: 运行 `Get-TimeZone` 检查系统时区
+- 确保 `SCHEDULE_TZ` 与服务器时区一致（如 `Asia/Shanghai`）
+
+详细文档请参考：
+- [SCHEDULER_FIX.md](SCHEDULER_FIX.md) - 调度器修复详解
+- [CONFIG_RECOMMENDATIONS.md](CONFIG_RECOMMENDATIONS.md) - 配置和性能优化建议

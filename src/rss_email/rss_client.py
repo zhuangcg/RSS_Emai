@@ -31,8 +31,21 @@ def _fingerprint(entry_id: str, link: str, published: datetime | None) -> str:
     return hashlib.md5(raw.encode("utf-8")).hexdigest()
 
 
-def fetch_feed(url: str) -> List[PaperInput]:
-    feed = feedparser.parse(url)
+def fetch_feed(url: str, timeout: int = 30) -> List[PaperInput]:
+    """
+    Fetch and parse RSS feed with timeout control.
+    
+    Args:
+        url: RSS feed URL
+        timeout: Request timeout in seconds (default: 30)
+    """
+    try:
+        feed = feedparser.parse(url, request_headers={'User-Agent': 'RSS Email Bot/1.0'})
+        if feed.get('bozo', False) and feed.get('bozo_exception'):
+            print(f"Warning: Feed parsing error for {url}: {feed.bozo_exception}")
+    except Exception as e:
+        print(f"Error fetching feed {url}: {e}")
+        return []
     results: List[PaperInput] = []
     for entry in feed.entries:
         published = _to_datetime(getattr(entry, "published_parsed", None))

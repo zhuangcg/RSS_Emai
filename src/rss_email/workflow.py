@@ -1,6 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List
-from datetime import timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -8,7 +7,7 @@ from sqlalchemy.orm import Session
 from .config import Settings
 from .db import Paper, get_paper
 from .email_client import EmailClient
-from .rss_client import PaperInput, fetch_feed
+from .rss_client import fetch_feed
 
 
 def _resolve_recipients(settings: Settings, group_name: str) -> tuple[List[str], List[str], List[str]]:
@@ -26,22 +25,26 @@ def ingest_feeds(settings: Settings, session: Session) -> int:
     created = 0
     for group_name, urls in settings.rss_groups.items():
         for url in urls:
-            entries = fetch_feed(url)
-            for entry in entries:
-                if get_paper(session, entry.fingerprint):
-                    continue
-                paper = Paper(
-                    id=entry.fingerprint,
-                    title=entry.title,
-                    authors=entry.authors,
-                    summary=entry.summary,
-                    link=entry.link,
-                    published_at=entry.published_at,
-                    source=url,
-                    inserted_at=datetime.utcnow(),
-                )
-                session.add(paper)
-                created += 1
+            try:
+                entries = fetch_feed(url)
+                for entry in entries:
+                    if get_paper(session, entry.fingerprint):
+                        continue
+                    paper = Paper(
+                        id=entry.fingerprint,
+                        title=entry.title,
+                        authors=entry.authors,
+                        summary=entry.summary,
+                        link=entry.link,
+                        published_at=entry.published_at,
+                        source=url,
+                        inserted_at=datetime.utcnow(),
+                    )
+                    session.add(paper)
+                    created += 1
+            except Exception as e:
+                print(f"[ERROR] Failed to ingest feed {url}: {e}")
+                continue
     session.commit()
     return created
 
